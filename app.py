@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 app = Flask(__name__)
 
@@ -59,40 +59,50 @@ produtos = [
         "imagem": "produto8.png",
         "preco": 109.90,
         "descricao": "Shorts esportivo preto, leve e confortável para qualquer atividade física."
-    }
+    },
+    # outros produtos...
 ]
-
-# Redireciona a raiz para a página de login
-@app.route('/')
-def root():
-    return redirect(url_for('login'))
-
-# Página de login
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        # Login
-        if username == "admin" and password == "1234":
-            return redirect(url_for('index'))
-        else:
-            return render_template('login.html', erro="Usuário ou senha incorretos")
-    
-    return render_template('login.html')
 
 # Página inicial com os produtos
 @app.route('/index')
 def index():
     return render_template('index.html', produtos=produtos)
 
+# Rota para adicionar um produto na lista (dados via lista)
+@app.route('/adicionar_produto', methods=['POST'])
+def adicionar_produto():
+    novo_produto = {
+        "id": len(produtos) + 1,
+        "nome": request.form['nome'],
+        "imagem": request.form['imagem'],
+        "preco": float(request.form['preco']),
+        "descricao": request.form['descricao']
+    }
+    produtos.append(novo_produto)
+    return redirect(url_for('index'))
+
+# Rota para adicionar um produto (dados via dicionário)
+@app.route('/adicionar_produto_dict', methods=['POST'])
+def adicionar_produto_dict():
+    produto_data = request.get_json()
+    
+    novo_produto = {
+        "id": len(produtos) + 1,
+        "nome": produto_data['nome'],
+        "imagem": produto_data['imagem'],
+        "preco": produto_data['preco'],
+        "descricao": produto_data['descricao']
+    }
+    produtos.append(novo_produto)
+    return jsonify({"message": "Produto adicionado com sucesso!", "produto": novo_produto}), 201
+
 # Página de detalhes do produto
 @app.route('/produto/<int:produto_id>')
 def produto(produto_id):
     produto = next((p for p in produtos if p["id"] == produto_id), None)
     if produto:
-        return render_template('produto.html', produto=produto)
+        return render_template('produto.html', produto=produto),
+    
     return "Produto não encontrado", 404
 
 if __name__ == '__main__':
