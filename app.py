@@ -64,46 +64,64 @@ produtos = [
 ]
 
 # Página inicial com os produtos
-@app.route('/index')
+
+
+@app.route('/')
 def index():
     return render_template('index.html', produtos=produtos)
 
 # Rota para adicionar um produto na lista (dados via lista)
-@app.route('/adicionar_produto', methods=['POST'])
+
+
+@app.route('/adicionar_produto', methods=['GET', 'POST'])
 def adicionar_produto():
-    novo_produto = {
-        "id": len(produtos) + 1,
-        "nome": request.form['nome'],
-        "imagem": request.form['imagem'],
-        "preco": float(request.form['preco']),
-        "descricao": request.form['descricao']
-    }
-    produtos.append(novo_produto)
-    return redirect(url_for('index'))
+    if request.method == 'POST':
+        novo_produto = {
+            "id": len(produtos) + 1,
+            "nome": request.form['nome'],
+            "imagem": request.form['imagem'],
+            "preco": float(request.form['preco']),
+            "sugestao": request.form['sugestao']
+        }
+        produtos.append(novo_produto)
+        return redirect(url_for('index'))  # Redireciona para a página inicial
+    return render_template('adicionar_produto.html')  # Renderiza o formulário
 
-# Rota para adicionar um produto (dados via dicionário)
-@app.route('/adicionar_produto_dict', methods=['POST'])
-def adicionar_produto_dict():
-    produto_data = request.get_json()
-    
-    novo_produto = {
-        "id": len(produtos) + 1,
-        "nome": produto_data['nome'],
-        "imagem": produto_data['imagem'],
-        "preco": produto_data['preco'],
-        "descricao": produto_data['descricao']
-    }
-    produtos.append(novo_produto)
-    return jsonify({"message": "Produto adicionado com sucesso!", "produto": novo_produto}), 201
 
-# Página de detalhes do produto
+
+
+@app.route('/novo_produto')
+def novo_produto():
+    return render_template('adicionar_produto.html')
+
+
+@app.route('/formulario_produto', methods=['GET'])
+def formulario_produto():
+    return render_template('formulario_produto.html')
+
+
 @app.route('/produto/<int:produto_id>')
 def produto(produto_id):
+    # Verificando o ID recebido e a lista de produtos
+    print(f"Procurando produto com id: {produto_id}")
+    print("Lista de produtos disponíveis:", produtos)
+
+    # Busca o produto pelo ID na lista de produtos
     produto = next((p for p in produtos if p["id"] == produto_id), None)
+
+    # Se o produto for encontrado, renderiza a página com os dados do produto
     if produto:
-        return render_template('produto.html', produto=produto),
-    
+        return render_template('produto.html', produto=produto)
+
+    # Caso não encontre o produto
+    print(f"Produto com id {produto_id} não encontrado.")
     return "Produto não encontrado", 404
+
+
+@app.route('/produtos')
+def lista_produtos():
+    return render_template('produtos.html', produtos=produtos)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
